@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "表单数据填充工具",
+  "name": "自定义数据生成器",
   "version": "1.0",
-  "description": "自动填充表单数据，支持自定义数据生成器",
+  "description": "支持自定义数据生成规则，快速填充表单数据",
   "permissions": [
     "activeTab",
     "storage",

@@ -66,18 +66,11 @@ async function fillField(element, dataType) {
     
     if (generatorCode) {
       try {
-        // 使用 evaluateCode 函数执行代码
         value = await evaluateCode(generatorCode);
       } catch (error) {
         console.error('自定义生成器执行错误:', error);
       }
     }
-  } else if (dataType === 'personal' && generators.personal[fieldType]) {
-    value = generators.personal[fieldType]();
-  } else if (dataType === 'business' && generators.business[fieldType]) {
-    value = generators.business[fieldType]();
-  } else if (generators.random[fieldType]) {
-    value = generators.random[fieldType]();
   }
   
   if (value) {
