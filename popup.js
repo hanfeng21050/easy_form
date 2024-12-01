@@ -30,18 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      // 检查代码是否包含 function 关键字
-      if (/function\s*\(/.test(code)) {
-        showToast('代码中不需要写 function 定义，直接写方法体即可', 'error');
-        return;
-      }
-
-      // 检查代码是否有 return 语句
-      if (!code.includes('return')) {
-        showToast('代码必须包含 return 语句', 'error');
-        return;
-      }
-
       const result = await evaluateCode(code);
       
       // 显示结果

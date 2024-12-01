@@ -97,10 +97,10 @@
     <h4>添加/编辑自定义生成器</h4>
     <input type="text" id="generatorName" placeholder="生成器名称" style="width: 100%; margin: 5px 0; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
     <textarea id="generatorCode" class="code-editor" placeholder="// 示例：生成随机姓名
-const firstNames = ['张', '李', '王', '赵', '钱'];
-const lastNames = ['明', '华', '强', '伟', '勇'];
-const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+var firstNames = ['张', '李', '王', '赵', '钱'];
+var lastNames = ['明', '华', '强', '伟', '勇'];
+var firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+var lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
 return firstName + lastName;  // 只能返回字符串或数字"></textarea>
     <div class="button-group">
       <button id="testGenerator">预览</button>
