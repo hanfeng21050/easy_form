@@ -89,7 +89,3 @@ return name + '@' + domains[Math.floor(Math.random() * domains.length)];
 
 - 点击"导出配置"将所有生成器保存为 JSON 文件
 - 点击"导入配置"从 JSON 文件中恢复生成器
-
-## License
-
-[MIT License](LICENSE)
