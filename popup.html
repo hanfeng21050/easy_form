@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>数据生成器管理</title>
+  <style>
+    body {
+      width: 400px;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+    }
+    button {
+      padding: 8px;
+      margin: 5px 0;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .generator-list {
+      max-height: 200px;
+      overflow-y: auto;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .generator-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .generator-item:last-child {
+      border-bottom: none;
+    }
+    .code-editor {
+      width: 100%;
+      height: 100px;
+      font-family: monospace;
+      margin: 5px 0;
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .preview-area {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+    }
+    .button-group {
+      display: flex;
+      gap: 5px;
+    }
+    .button-group button {
+      flex: 1;
+    }
+    h3, h4 {
+      margin: 10px 0;
+      color: #333;
+    }
+    .generator-name {
+      font-weight: bold;
+    }
+    .generator-form {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h3>数据生成器管理</h3>
+
+  <div class="generator-list" id="generatorList">
+    <!-- 生成器列表将通过 JavaScript 动态填充 -->
+  </div>
+
+  <div class="generator-form">
+    <h4>添加/编辑生成器</h4>
+    <input type="text" id="generatorName" placeholder="生成器名称" style="width: 100%; margin: 5px 0; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+    <textarea id="generatorCode" class="code-editor" placeholder="请输入数据生成代码，例如:&#10;function() {&#10;  return '示例数据';&#10;}"></textarea>
+    <div class="button-group">
+      <button id="testGenerator">测试生成器</button>
+      <button id="saveGenerator">保存生成器</button>
+    </div>
+    <div class="preview-area">
+      <h4>预览结果</h4>
+      <div id="previewResult"></div>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

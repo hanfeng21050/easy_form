@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "表单数据填充工具",
+  "version": "1.0",
+  "description": "自动填充表单数据，支持自定义数据生成器",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  }
+}
