@@ -9,7 +9,7 @@ async function initContextMenus() {
   // 创建主菜单
   chrome.contextMenus.create({
     id: 'fillWithGenerator',
-    title: '使用生成器填充',
+    title: '测试数据',
     contexts: ['editable']
   });
 
