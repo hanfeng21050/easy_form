@@ -17,11 +17,12 @@ const evaluateCode = async (code) => {
   const interpreter = createInterpreter();
   try {
     const result = await interpreter.evaluate(code);
-    console.log('Evaluation result:', result);
+    if (result === undefined) {
+      throw new Error('生成器必须返回一个值');
+    }
     return result;
   } catch (error) {
-    console.error('Evaluation error:', error);
-    throw new Error(`代码执行错误: ${error.message}`);
+    throw new Error(`执行错误: ${error.message}\n代码行号: ${error.lineNumber}`);
   }
 };
 

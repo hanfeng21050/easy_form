@@ -23,7 +23,15 @@ const fieldMapping = {
   date: ['date', 'datetime']
 };
 
+// 添加字段类型缓存
+const fieldTypeCache = new Map();
+
 function detectFieldType(element) {
+  const cacheKey = element.name + element.id;
+  if (fieldTypeCache.has(cacheKey)) {
+    return fieldTypeCache.get(cacheKey);
+  }
+  
   const name = element.name.toLowerCase();
   const id = element.id.toLowerCase();
   const type = element.type.toLowerCase();
@@ -35,11 +43,13 @@ function detectFieldType(element) {
       id.includes(keyword) ||
       element.getAttribute('placeholder')?.toLowerCase().includes(keyword)
     )) {
+      fieldTypeCache.set(cacheKey, fieldType);
       return fieldType;
     }
   }
   
   // Fallback to input type
+  fieldTypeCache.set(cacheKey, type);
   return type;
 }
 
@@ -56,8 +66,8 @@ async function fillField(element, dataType) {
     
     if (generatorCode) {
       try {
-        const generatorFunc = eval('(' + generatorCode + ')');
-        value = generatorFunc();
+        // 使用 evaluateCode 函数执行代码
+        value = await evaluateCode(generatorCode);
       } catch (error) {
         console.error('自定义生成器执行错误:', error);
       }
@@ -90,5 +100,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       input.dispatchEvent(new Event('change', { bubbles: true }));
       input.dispatchEvent(new Event('input', { bubbles: true }));
     });
+  } else if (request.action === 'fillWithGenerator') {
+    // 处理单个元素的填充
+    const element = document.activeElement;
+    if (element) {
+      fillField(element, `custom:${request.generatorName}`);
+    }
   }
 });

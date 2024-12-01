@@ -321,4 +321,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     // 显示历史记录列表
   }
+
+  // 建议添加数据备份机制
+  async function backupGenerators() {
+    const generators = await loadSavedGenerators();
+    localStorage.setItem('generators_backup', JSON.stringify(generators));
+  }
+
+  // 添加快捷键提示
+  function addShortcutHints() {
+    const shortcuts = {
+      'Ctrl + Enter': '测试生成器',
+      'Ctrl + S': '保存生成器',
+      'Esc': '清空输入'
+    };
+    
+    // 显示快捷键提示...
+  }
 });
