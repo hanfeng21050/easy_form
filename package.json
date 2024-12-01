@@ -1,8 +1,0 @@
-{
-  "name": "fake-data-generator",
-  "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "eval5": "^1.4.8"
-  }
-}

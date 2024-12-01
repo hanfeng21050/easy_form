@@ -1,5 +1,3 @@
-import { evaluateCode } from './interpreter.js';
-
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM Content Loaded');
   
@@ -9,8 +7,11 @@ document.addEventListener('DOMContentLoaded', function() {
   const testGenerator = document.getElementById('testGenerator');
   const saveGenerator = document.getElementById('saveGenerator');
   const previewResult = document.getElementById('previewResult');
+  const exportBtn = document.getElementById('exportBtn');
+  const importBtn = document.getElementById('importBtn');
+  const importFile = document.getElementById('importFile');
 
-  if (!generatorList || !generatorName || !generatorCode || !testGenerator || !saveGenerator || !previewResult) {
+  if (!generatorList || !generatorName || !generatorCode || !testGenerator || !saveGenerator || !previewResult || !exportBtn || !importBtn || !importFile) {
     console.error('Required elements not found');
     return;
   }
@@ -22,16 +23,39 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 测试生成器按钮点击事件
   testGenerator.addEventListener('click', async () => {
-    console.log('Test button clicked');
     try {
       const code = generatorCode.value;
-      console.log('Evaluating code:', code);
+      if (!code.trim()) {
+        showToast('请输入生成器代码', 'error');
+        return;
+      }
+
+      // 检查代码是否包含 function 关键字
+      if (/function\s*\(/.test(code)) {
+        showToast('代码中不需要写 function 定义，直接写方法体即可', 'error');
+        return;
+      }
+
+      // 检查代码是否有 return 语句
+      if (!code.includes('return')) {
+        showToast('代码必须包含 return 语句', 'error');
+        return;
+      }
+
       const result = await evaluateCode(code);
-      console.log('Evaluation result:', result);
-      previewResult.textContent = JSON.stringify(result, null, 2);
+      
+      // 显示结果
+      if (typeof result === 'string') {
+        previewResult.textContent = `"${result}"`;
+      } else {
+        previewResult.textContent = result;
+      }
+      
+      showToast('测试成功！');
     } catch (error) {
       console.error('Test error:', error);
       previewResult.textContent = `错误: ${error.message}`;
+      showToast('测试失败: ' + error.message, 'error');
     }
   });
 
@@ -42,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const code = generatorCode.value.trim();
 
     if (!name || !code) {
-      alert('请填写生成器名称和代码');
+      showToast('请填写生成器名称和代码', 'error');
       return;
     }
 
@@ -65,9 +89,11 @@ document.addEventListener('DOMContentLoaded', function() {
       generatorCode.value = '';
       previewResult.textContent = '';
       currentEditingGenerator = null;
+      
+      showToast('保存成功！');
     } catch (error) {
       console.error('Save error:', error);
-      alert(`保存失败: ${error.message}`);
+      showToast('保存失败: ' + error.message, 'error');
     }
   });
 
@@ -116,6 +142,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
     } catch (error) {
       console.error('Load generators error:', error);
+      showToast('加载生成器列表失败: ' + error.message, 'error');
     }
   }
 
@@ -140,8 +167,10 @@ document.addEventListener('DOMContentLoaded', function() {
       delete generators[name];
       await chrome.storage.sync.set({ 'customGenerators': generators });
       loadGenerators();
+      showToast('删除成功！');
     } catch (error) {
       console.error('Delete generator error:', error);
+      showToast('删除失败: ' + error.message, 'error');
     }
   }
 
@@ -155,5 +184,141 @@ document.addEventListener('DOMContentLoaded', function() {
       console.error('Load saved generators error:', error);
       return {};
     }
+  }
+
+  // 导出功能实现
+  exportBtn.addEventListener('click', async () => {
+    try {
+      const result = await chrome.storage.sync.get('customGenerators');
+      const generators = result.customGenerators || {};
+      
+      const blob = new Blob([JSON.stringify(generators, null, 2)], { 
+        type: 'application/json' 
+      });
+      
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'generators-backup.json';
+      
+      document.body.appendChild(a);
+      a.click();
+      
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showToast('导出成功！');
+    } catch (error) {
+      console.error('导出失败:', error);
+      showToast('导出失败: ' + error.message, 'error');
+    }
+  });
+  
+  // 导入功能实现
+  importBtn.addEventListener('click', () => {
+    importFile.click();
+  });
+  
+  importFile.addEventListener('change', async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      const generators = JSON.parse(text);
+      
+      await chrome.storage.sync.set({ 'customGenerators': generators });
+      await loadGenerators();
+      
+      showToast('导入成功！');
+      event.target.value = '';
+    } catch (error) {
+      console.error('导入失败:', error);
+      showToast('导入失败: ' + error.message, 'error');
+    }
+  });
+
+  // Toast 提示功能
+  function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      border-radius: 4px;
+      color: white;
+      z-index: 10000;
+      transition: opacity 0.3s;
+    `;
+    
+    if (type === 'error') {
+      toast.style.backgroundColor = '#ff4444';
+    } else {
+      toast.style.backgroundColor = '#4CAF50';
+    }
+    
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      setTimeout(() => {
+        document.body.removeChild(toast);
+      }, 300);
+    }, 3000);
+  }
+
+  // 添加代码格式化函数
+  function formatCode(code) {
+    // 简单的格式化
+    return code.replace(/^\s*function\s*\(\s*\)\s*\{/, 'function() {')
+              .replace(/\}\s*$/, '\n}')
+              .replace(/\n\s+/g, '\n  ');
+  }
+
+  // 添加快捷键支持
+  generatorCode.addEventListener('keydown', (e) => {
+    // Ctrl + Enter 执行测试
+    if (e.ctrlKey && e.key === 'Enter') {
+      e.preventDefault();
+      testGenerator.click();
+    }
+    
+    // Tab 键缩进
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = generatorCode.selectionStart;
+      const end = generatorCode.selectionEnd;
+      generatorCode.value = generatorCode.value.substring(0, start) + '  ' + 
+                           generatorCode.value.substring(end);
+      generatorCode.selectionStart = generatorCode.selectionEnd = start + 2;
+    }
+  });
+
+  // 保存最近使用的生成器
+  function saveHistory(name, code) {
+    const history = JSON.parse(localStorage.getItem('generatorHistory') || '[]');
+    history.unshift({ name, code, time: Date.now() });
+    if (history.length > 10) history.pop();
+    localStorage.setItem('generatorHistory', JSON.stringify(history));
+  }
+
+  // 显示历史记录
+  function showHistory() {
+    const history = JSON.parse(localStorage.getItem('generatorHistory') || '[]');
+    const historyList = document.createElement('div');
+    historyList.className = 'history-list';
+    history.forEach(item => {
+      const div = document.createElement('div');
+      div.textContent = `${item.name} (${new Date(item.time).toLocaleString()})`;
+      div.onclick = () => {
+        generatorName.value = item.name;
+        generatorCode.value = item.code;
+      };
+      historyList.appendChild(div);
+    });
+    // 显示历史记录列表
   }
 });

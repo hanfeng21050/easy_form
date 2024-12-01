@@ -41,7 +41,9 @@
     .code-editor {
       width: 100%;
       height: 100px;
-      font-family: monospace;
+      font-family: 'Consolas', monospace;
+      line-height: 1.5;
+      tab-size: 2;
       margin: 5px 0;
       padding: 5px;
       border: 1px solid #ddd;
@@ -78,7 +80,14 @@
   </style>
 </head>
 <body>
-  <h3>数据生成器管理</h3>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <h3 style="margin: 0;">数据生成器管理</h3>
+    <div class="button-group" style="width: auto;">
+      <button id="exportBtn" style="padding: 4px 8px; font-size: 12px;">导出配置</button>
+      <button id="importBtn" style="padding: 4px 8px; font-size: 12px;">导入配置</button>
+      <input type="file" id="importFile" accept=".json" style="display: none;">
+    </div>
+  </div>
 
   <div class="generator-list" id="generatorList">
     <!-- 生成器列表将通过 JavaScript 动态填充 -->
@@ -87,17 +96,24 @@
   <div class="generator-form">
     <h4>添加/编辑生成器</h4>
     <input type="text" id="generatorName" placeholder="生成器名称" style="width: 100%; margin: 5px 0; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
-    <textarea id="generatorCode" class="code-editor" placeholder="请输入数据生成代码，例如:&#10;function() {&#10;  return '示例数据';&#10;}"></textarea>
+    <textarea id="generatorCode" class="code-editor" placeholder="// 示例：生成随机姓名
+const firstNames = ['张', '李', '王', '赵', '钱'];
+const lastNames = ['明', '华', '强', '伟', '勇'];
+const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+return firstName + lastName;  // 只能返回字符串或数字"></textarea>
     <div class="button-group">
-      <button id="testGenerator">测试生成器</button>
-      <button id="saveGenerator">保存生成器</button>
+      <button id="testGenerator">预览</button>
+      <button id="saveGenerator">保存</button>
     </div>
     <div class="preview-area">
-      <h4>预览结果</h4>
       <div id="previewResult"></div>
     </div>
   </div>
 
-  <script type="module" src="popup.js"></script>
+  <script src="lib/eval5.min.js"></script>
+  <script src="lib/eval5.js"></script>
+  <script src="interpreter.js"></script>
+  <script src="popup.js"></script>
 </body>
 </html>
