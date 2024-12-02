@@ -32,12 +32,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const result = await evaluateCode(code);
       
-      // 显示结果
-      if (typeof result === 'string') {
-        previewResult.textContent = `"${result}"`;
-      } else {
-        previewResult.textContent = result;
-      }
+      // 直接显示结果，不添加引号
+      previewResult.textContent = result;
       
       showToast('测试成功！');
     } catch (error) {
@@ -127,15 +123,43 @@ document.addEventListener('DOMContentLoaded', function() {
   // 删除生成器
   async function deleteGenerator(name) {
     console.log('Deleting generator:', name);
-    if (!confirm(`确定要删除生成器 "${name}" 吗？`)) {
-      return;
-    }
 
     try {
-      const generators = await loadSavedGenerators();
+      // 获取所有数据
+      const result = await chrome.storage.sync.get(['customGenerators', 'elementBindings', 'defaultGenerator']);
+      const generators = result.customGenerators || {};
+      const elementBindings = result.elementBindings || {};
+      
+      // 删除生成器
       delete generators[name];
-      await chrome.storage.sync.set({ 'customGenerators': generators });
+      
+      // 如果删除的是默认生成器，清除默认生成器设置
+      let updates = { customGenerators: generators };
+      if (result.defaultGenerator === name) {
+        updates.defaultGenerator = null;
+      }
+      
+      // 删除相关的绑定关系
+      let hasBindings = false;
+      Object.entries(elementBindings).forEach(([key, binding]) => {
+        if (binding.generatorName === name) {
+          hasBindings = true;
+          delete elementBindings[key];
+        }
+      });
+      if (hasBindings) {
+        updates.elementBindings = elementBindings;
+      }
+      
+      // 保存更新
+      await chrome.storage.sync.set(updates);
+      
+      // 刷新界面
       loadGenerators();
+      if (document.querySelector('.tab[data-tab="bindings"]').classList.contains('active')) {
+        loadBindings();
+      }
+      
       showToast('删除成功！');
     } catch (error) {
       console.error('Delete generator error:', error);
@@ -240,20 +264,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const toast = document.createElement('div');
     toast.style.cssText = `
       position: fixed;
-      bottom: 20px;
+      top: 60px;
       left: 50%;
       transform: translateX(-50%);
-      padding: 10px 20px;
+      padding: 8px 16px;
       border-radius: 4px;
       color: white;
       z-index: 10000;
-      transition: opacity 0.3s;
+      transition: opacity 0.2s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      backdrop-filter: blur(4px);
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     `;
     
     if (type === 'error') {
-      toast.style.backgroundColor = '#ff4444';
+      toast.style.backgroundColor = 'rgba(255, 68, 68, 0.9)';
     } else {
-      toast.style.backgroundColor = '#4CAF50';
+      toast.style.backgroundColor = 'rgba(76, 175, 80, 0.9)';
     }
     
     toast.textContent = message;
@@ -263,8 +293,8 @@ document.addEventListener('DOMContentLoaded', function() {
       toast.style.opacity = '0';
       setTimeout(() => {
         document.body.removeChild(toast);
-      }, 300);
-    }, 3000);
+      }, 200);
+    }, 1500);
   }
 
   // 添加代码格式化函数
@@ -456,4 +486,33 @@ document.addEventListener('DOMContentLoaded', function() {
       bindingList.appendChild(item);
     });
   }
+
+  // 添加点击复制功能
+  previewResult.addEventListener('click', async () => {
+    const text = previewResult.textContent;
+    if (!text) return;
+    
+    try {
+      await navigator.clipboard.writeText(text);
+      
+      // 添加临时的复制提示效果
+      const originalColor = previewResult.style.backgroundColor;
+      previewResult.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';  // 轻微的绿色背景
+      
+      // 显示简短的复制成功提示
+      showToast('已复制', 'success');
+      
+      // 恢复原始背景色
+      setTimeout(() => {
+        previewResult.style.backgroundColor = originalColor;
+      }, 200);
+    } catch (error) {
+      console.error('复制失败:', error);
+      showToast('复制失败', 'error');
+    }
+  });
+
+  // 添加鼠标悬停效果
+  previewResult.style.cursor = 'pointer';
+  previewResult.title = '点击复制';
 });
