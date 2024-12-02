@@ -1,60 +1,5 @@
-// Field type detection and mapping
-const fieldMapping = {
-  // Name fields
-  name: ['name', 'fullname', 'full-name'],
-  firstName: ['firstname', 'fname', 'first-name', 'given-name'],
-  lastName: ['lastname', 'lname', 'last-name', 'family-name'],
-  
-  // Contact fields
-  email: ['email', 'e-mail', 'emailaddress'],
-  phone: ['phone', 'telephone', 'tel', 'mobile', 'cell'],
-  
-  // Address fields
-  address: ['address', 'street', 'streetaddress'],
-  
-  // Business fields
-  company: ['company', 'organization', 'business', 'company-name'],
-  jobTitle: ['job', 'title', 'position', 'job-title'],
-  department: ['department', 'dept', 'team'],
-  
-  // Generic fields
-  number: ['number', 'amount', 'quantity'],
-  text: ['text', 'description', 'comment'],
-  date: ['date', 'datetime']
-};
-
-// 添加字段类型缓存
-const fieldTypeCache = new Map();
-
-function detectFieldType(element) {
-  const cacheKey = element.name + element.id;
-  if (fieldTypeCache.has(cacheKey)) {
-    return fieldTypeCache.get(cacheKey);
-  }
-  
-  const name = element.name.toLowerCase();
-  const id = element.id.toLowerCase();
-  const type = element.type.toLowerCase();
-  
-  // Check each field type
-  for (const [fieldType, keywords] of Object.entries(fieldMapping)) {
-    if (keywords.some(keyword => 
-      name.includes(keyword) || 
-      id.includes(keyword) ||
-      element.getAttribute('placeholder')?.toLowerCase().includes(keyword)
-    )) {
-      fieldTypeCache.set(cacheKey, fieldType);
-      return fieldType;
-    }
-  }
-  
-  // Fallback to input type
-  fieldTypeCache.set(cacheKey, type);
-  return type;
-}
-
+// 处理表单填充
 async function fillField(element, dataType) {
-  const fieldType = detectFieldType(element);
   let value = '';
   
   if (dataType.startsWith('custom:')) {
@@ -75,13 +20,12 @@ async function fillField(element, dataType) {
   
   if (value) {
     element.value = value;
-    // 触发change事件
-    element.dispatchEvent(new Event('change', { bubbles: true }));
     element.dispatchEvent(new Event('input', { bubbles: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
   }
 }
 
-// Listen for messages from popup
+// 监听来自 popup 的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'fillForms') {
     const inputs = document.querySelectorAll('input:not([type="hidden"]), textarea, select');

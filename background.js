@@ -47,7 +47,6 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         files: [
-          'lib/eval5.min.js',
           'lib/eval5.js',
           'interpreter.js',
           'content.js'
