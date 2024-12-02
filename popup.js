@@ -155,20 +155,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // 导出功能实现
+  // 修改导出功能
   exportBtn.addEventListener('click', async () => {
     try {
-      const result = await chrome.storage.sync.get('customGenerators');
-      const generators = result.customGenerators || {};
+      // 获取所有数据
+      const result = await chrome.storage.sync.get([
+        'customGenerators',
+        'defaultGenerator',
+        'elementBindings'
+      ]);
+
+      const exportData = {
+        customGenerators: result.customGenerators || {},
+        defaultGenerator: result.defaultGenerator || null,
+        elementBindings: result.elementBindings || {},
+        exportTime: new Date().toISOString(),
+        version: '1.0'
+      };
       
-      const blob = new Blob([JSON.stringify(generators, null, 2)], { 
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
         type: 'application/json' 
       });
       
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'generators-backup.json';
+      a.download = 'generator-config.json';
       
       document.body.appendChild(a);
       a.click();
@@ -188,16 +200,32 @@ document.addEventListener('DOMContentLoaded', function() {
     importFile.click();
   });
   
+  // 修改导入功能
   importFile.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     if (!file) return;
     
     try {
       const text = await file.text();
-      const generators = JSON.parse(text);
+      const data = JSON.parse(text);
       
-      await chrome.storage.sync.set({ 'customGenerators': generators });
+      // 验证导入数据的格式
+      if (!data.customGenerators || typeof data.customGenerators !== 'object') {
+        throw new Error('无效的生成器配置数据');
+      }
+
+      // 保存所有数据
+      await chrome.storage.sync.set({
+        customGenerators: data.customGenerators,
+        defaultGenerator: data.defaultGenerator || null,
+        elementBindings: data.elementBindings || {}
+      });
+
+      // 刷新界面
       await loadGenerators();
+      if (document.querySelector('.tab[data-tab="bindings"]').classList.contains('active')) {
+        await loadBindings();
+      }
       
       showToast('导入成功！');
       event.target.value = '';
@@ -328,7 +356,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showToast(`已将 "${name}" 设为默认生成器`);
         loadGenerators();
       } catch (error) {
-        showToast('设置默认生成器失败: ' + error.message, 'error');
+        showToast('设置默认成器失败: ' + error.message, 'error');
       }
     };
     
@@ -357,5 +385,75 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     return item;
+  }
+
+  // 标签页切换
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // 更新标签页状态
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      
+      // 更新内容显示
+      const tabContents = document.querySelectorAll('.tab-content');
+      tabContents.forEach(content => content.classList.remove('active'));
+      document.getElementById(`${tab.dataset.tab}Tab`).classList.add('active');
+      
+      // 如果切换到绑定关系标签，加载绑定列表
+      if (tab.dataset.tab === 'bindings') {
+        loadBindings();
+      }
+    });
+  });
+
+  // 加载绑定关系列表
+  async function loadBindings() {
+    const bindingList = document.getElementById('bindingList');
+    const { elementBindings = {} } = await chrome.storage.sync.get('elementBindings');
+    
+    bindingList.innerHTML = '';
+    
+    if (Object.keys(elementBindings).length === 0) {
+      bindingList.innerHTML = '<div class="binding-item">暂无绑定关系</div>';
+      return;
+    }
+    
+    Object.entries(elementBindings).forEach(([key, binding]) => {
+      const item = document.createElement('div');
+      item.className = 'binding-item';
+      
+      const info = document.createElement('div');
+      info.className = 'binding-info';
+      
+      const url = document.createElement('div');
+      url.className = 'url';
+      url.textContent = binding.url;
+      
+      const selector = document.createElement('div');
+      selector.className = 'selector';
+      selector.textContent = binding.selector;
+      
+      const generator = document.createElement('div');
+      generator.className = 'generator-name';
+      generator.textContent = `使用生成器: ${binding.generatorName}`;
+      
+      info.appendChild(url);
+      info.appendChild(selector);
+      info.appendChild(generator);
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'btn btn-delete';
+      deleteBtn.textContent = '删除';
+      deleteBtn.onclick = async () => {
+        delete elementBindings[key];
+        await chrome.storage.sync.set({ elementBindings });
+        loadBindings();
+      };
+      
+      item.appendChild(info);
+      item.appendChild(deleteBtn);
+      bindingList.appendChild(item);
+    });
   }
 });
