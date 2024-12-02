@@ -316,42 +316,43 @@ document.addEventListener('DOMContentLoaded', function() {
     nameSpan.className = 'generator-name';
     nameSpan.textContent = name;
     
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.className = 'button-group';
+    const actions = document.createElement('div');
+    actions.className = 'actions';
     
-    // 添加设为默认按钮
     const setDefaultButton = document.createElement('button');
+    setDefaultButton.className = 'btn btn-action default';
     setDefaultButton.textContent = '默认';
     setDefaultButton.onclick = async () => {
       try {
         await chrome.storage.sync.set({ defaultGenerator: name });
         showToast(`已将 "${name}" 设为默认生成器`);
-        loadGenerators(); // 刷新列表以更新UI状态
+        loadGenerators();
       } catch (error) {
         showToast('设置默认生成器失败: ' + error.message, 'error');
       }
     };
     
     const editButton = document.createElement('button');
+    editButton.className = 'btn btn-action edit';
     editButton.textContent = '编辑';
     editButton.onclick = () => editGenerator(name, code);
     
     const deleteButton = document.createElement('button');
+    deleteButton.className = 'btn btn-action delete';
     deleteButton.textContent = '删除';
     deleteButton.onclick = () => deleteGenerator(name);
     
-    buttonsDiv.appendChild(setDefaultButton);
-    buttonsDiv.appendChild(editButton);
-    buttonsDiv.appendChild(deleteButton);
+    actions.appendChild(setDefaultButton);
+    actions.appendChild(editButton);
+    actions.appendChild(deleteButton);
     
     item.appendChild(nameSpan);
-    item.appendChild(buttonsDiv);
+    item.appendChild(actions);
     
     // 检查是否为默认生成器
     chrome.storage.sync.get('defaultGenerator', (result) => {
       if (result.defaultGenerator === name) {
         item.classList.add('default-generator');
-        nameSpan.textContent = `${name} (默认)`;
       }
     });
     
