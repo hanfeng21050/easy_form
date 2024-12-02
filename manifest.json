@@ -24,13 +24,14 @@
       "js": [
         "lib/eval5.min.js",
         "lib/eval5.js",
+        "lib/babel.min.js",
         "interpreter.js",
         "content.js"
       ]
     }
   ],
   "web_accessible_resources": [{
-    "resources": ["lib/eval5.js"],
+    "resources": ["lib/eval5.js", "lib/babel.min.js"],
     "matches": ["<all_urls>"]
   }],
   "content_security_policy": {

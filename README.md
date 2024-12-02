@@ -27,31 +27,29 @@
 在任意输入框右键点击 -> 选择"填充数据" -> 点击要使用的生成器
 
 ## 代码示例
-## 代码示例
 
 ```javascript
-// 示例1：生成随机中文姓名
-var firstNames = ['张', '李', '王', '赵', '钱'];
-var lastNames = ['明', '华', '强', '伟', '勇'];
-var firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-var lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-return firstName + lastName;
+// 示例1：使用 ES6 生成随机中文姓名
+const firstNames = ['张', '李', '王', '赵', '钱'];
+const lastNames = ['明', '华', '强', '伟', '勇'];
+const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+return `${firstName}${lastName}`;
 
-// 示例2：生成随机手机号
-return '1' + 
-  ['3', '4', '5', '7', '8'][Math.floor(Math.random() * 5)] + 
-  Array.apply(null, Array(9)).map(function() {
-    return Math.floor(Math.random() * 10);
-  }).join('');
+// 示例2：使用 ES6 生成随机手机号
+const prefix = ['3', '4', '5', '7', '8'];
+return `1${prefix[Math.floor(Math.random() * prefix.length)]}${
+  Array(9).fill().map(() => Math.floor(Math.random() * 10)).join('')
+}`;
 
-// 示例3：生成随机邮箱
-var domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
-var chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-var length = 8 + Math.floor(Math.random() * 5);
-var name = Array.apply(null, Array(length)).map(function() {
-  return chars[Math.floor(Math.random() * chars.length)];
-}).join('');
-return name + '@' + domains[Math.floor(Math.random() * domains.length)];
+// 示例3：使用 ES6 生成随机邮箱
+const domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com'];
+const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+const length = 8 + Math.floor(Math.random() * 5);
+const name = Array(length).fill()
+  .map(() => chars[Math.floor(Math.random() * chars.length)])
+  .join('');
+return `${name}@${domains[Math.floor(Math.random() * domains.length)]}`;
 ```
 
 ## 注意事项
@@ -84,8 +82,9 @@ return name + '@' + domains[Math.floor(Math.random() * domains.length)];
 ### 技术栈
 
 - Chrome Extension API
-- JavaScript
+- JavaScript (ES6+)
 - eval5 (安全的代码执行环境)
+- Babel (ES6+ 代码转换)
 
 ## 配置导入导出
 
