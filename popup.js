@@ -89,7 +89,10 @@ document.addEventListener('DOMContentLoaded', function() {
   async function loadGenerators() {
     console.log('Loading generators...');
     try {
-      const generators = await loadSavedGenerators();
+      const result = await chrome.storage.sync.get(['customGenerators', 'defaultGenerator']);
+      const generators = result.customGenerators || {};
+      const defaultGenerator = result.defaultGenerator;
+      
       generatorList.innerHTML = '';
       
       if (Object.keys(generators).length === 0) {
@@ -103,29 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       
       Object.entries(generators).forEach(([name, code]) => {
-        const item = document.createElement('div');
-        item.className = 'generator-item';
-        
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'generator-name';
-        nameSpan.textContent = name;
-        
-        const buttonsDiv = document.createElement('div');
-        buttonsDiv.className = 'button-group';
-        
-        const editButton = document.createElement('button');
-        editButton.textContent = '编辑';
-        editButton.onclick = () => editGenerator(name, code);
-        
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = '删除';
-        deleteButton.onclick = () => deleteGenerator(name);
-        
-        buttonsDiv.appendChild(editButton);
-        buttonsDiv.appendChild(deleteButton);
-        
-        item.appendChild(nameSpan);
-        item.appendChild(buttonsDiv);
+        const item = createGeneratorItem(name, code);
         generatorList.appendChild(item);
       });
     } catch (error) {
@@ -325,5 +306,55 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // 显示快捷键提示...
+  }
+
+  function createGeneratorItem(name, code) {
+    const item = document.createElement('div');
+    item.className = 'generator-item';
+    
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'generator-name';
+    nameSpan.textContent = name;
+    
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.className = 'button-group';
+    
+    // 添加设为默认按钮
+    const setDefaultButton = document.createElement('button');
+    setDefaultButton.textContent = '默认';
+    setDefaultButton.onclick = async () => {
+      try {
+        await chrome.storage.sync.set({ defaultGenerator: name });
+        showToast(`已将 "${name}" 设为默认生成器`);
+        loadGenerators(); // 刷新列表以更新UI状态
+      } catch (error) {
+        showToast('设置默认生成器失败: ' + error.message, 'error');
+      }
+    };
+    
+    const editButton = document.createElement('button');
+    editButton.textContent = '编辑';
+    editButton.onclick = () => editGenerator(name, code);
+    
+    const deleteButton = document.createElement('button');
+    deleteButton.textContent = '删除';
+    deleteButton.onclick = () => deleteGenerator(name);
+    
+    buttonsDiv.appendChild(setDefaultButton);
+    buttonsDiv.appendChild(editButton);
+    buttonsDiv.appendChild(deleteButton);
+    
+    item.appendChild(nameSpan);
+    item.appendChild(buttonsDiv);
+    
+    // 检查是否为默认生成器
+    chrome.storage.sync.get('defaultGenerator', (result) => {
+      if (result.defaultGenerator === name) {
+        item.classList.add('default-generator');
+        nameSpan.textContent = `${name} (默认)`;
+      }
+    });
+    
+    return item;
   }
 });

@@ -40,11 +40,11 @@ const evaluateCode = async (code) => {
     const transformedCode = transformCode(code);
     const result = await interpreter.evaluate(transformedCode);
     if (result === undefined) {
-      throw new Error('生成器必须返回一个值');
+      throw new Error('生成器必须返回一个值，请检查return语句');
     }
     return result;
   } catch (error) {
-    throw new Error(`执行错误: ${error.message}\n代码行号: ${error.lineNumber}`);
+    throw new Error(`执行错误: ${error.message}\n代码位置: ${error.lineNumber}\n堆栈: ${error.stack}`);
   }
 };
 

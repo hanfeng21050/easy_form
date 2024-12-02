@@ -9,6 +9,9 @@
     "contextMenus",
     "scripting"
   ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -24,12 +27,19 @@
       "js": [
         "lib/eval5.min.js",
         "lib/babel.min.js",
+        "lib/eval5.js",
+        "interpreter.js",
         "content.js"
       ]
     }
   ],
   "web_accessible_resources": [{
-    "resources": ["lib/babel.min.js", "lib/eval5.min.js"],
+    "resources": [
+      "lib/eval5.min.js",
+      "lib/babel.min.js",
+      "lib/eval5.js",
+      "interpreter.js"
+    ],
     "matches": ["<all_urls>"]
   }],
   "content_security_policy": {
