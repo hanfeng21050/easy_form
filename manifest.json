@@ -38,7 +38,8 @@
       "lib/eval5.min.js",
       "lib/babel.min.js",
       "lib/eval5.js",
-      "interpreter.js"
+      "interpreter.js",
+      "icons/icon16.png"
     ],
     "matches": ["<all_urls>"]
   }],
