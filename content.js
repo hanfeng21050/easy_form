@@ -105,16 +105,14 @@
   // 获取元素的绑定生成器
   async function getElementBinding(element) {
     const selector = generateElementSelector(element);
-    const key = `${window.location.origin}|${selector}`;
     
     console.log('Checking binding for:', {
       selector,
-      key,
       element
     });
     
     const { elementBindings = {} } = await chrome.storage.sync.get('elementBindings');
-    const binding = elementBindings[key];
+    const binding = elementBindings[selector];
     
     console.log('Found binding:', binding);
     
@@ -124,12 +122,10 @@
   // 保存元素绑定
   async function saveElementBinding(element, generatorName) {
     const selector = generateElementSelector(element);
-    const key = `${window.location.origin}|${selector}`;
     
     const { elementBindings = {} } = await chrome.storage.sync.get('elementBindings');
     
-    elementBindings[key] = {
-      url: window.location.origin,
+    elementBindings[selector] = {
       selector,
       generatorName,
       lastUsed: Date.now()
