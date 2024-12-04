@@ -85,91 +85,181 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // 加载生成器列表
   async function loadGenerators() {
-    const result = await chrome.storage.sync.get(['customGenerators', 'defaultGenerator']);
+    const result = await chrome.storage.sync.get(['customGenerators', 'defaultGenerator', 'generatorOrder']);
     const generators = result.customGenerators || {};
+    const defaultGenerator = result.defaultGenerator;
+    const order = result.generatorOrder || Object.keys(generators);
     
     generatorList.innerHTML = '';
     
-    Object.entries(generators).forEach(([name, code]) => {
-      const item = document.createElement('div');
-      item.className = 'generator-item';
-      
-      const nameSpan = document.createElement('span');
-      nameSpan.textContent = name;
-      item.appendChild(nameSpan);
+    // 按保存的顺序显示生成器
+    order.forEach(name => {
+      if (generators[name]) {
+        const item = document.createElement('div');
+        item.className = 'generator-item';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = name;
+        item.appendChild(nameSpan);
 
-      // 添加删除按钮
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'btn btn-delete';
-      deleteBtn.innerHTML = '删除';
-      deleteBtn.onclick = async (e) => {
-        e.stopPropagation(); // 阻止事件冒泡
-        if (confirm(`确定要删除生成器 "${name}" 吗？`)) {
-          try {
-            // 获取所有数据
-            const result = await chrome.storage.sync.get(['customGenerators', 'elementBindings', 'defaultGenerator']);
-            const generators = result.customGenerators || {};
-            const elementBindings = result.elementBindings || {};
-            
-            // 删除生成器
-            delete generators[name];
-            
-            // 如果删除的是默认生成器，清除默认生成器设置
-            let updates = { customGenerators: generators };
-            if (result.defaultGenerator === name) {
-              updates.defaultGenerator = null;
-            }
-            
-            // 删除相关的绑定关系
-            let hasBindings = false;
-            Object.entries(elementBindings).forEach(([key, binding]) => {
-              if (binding.generatorName === name) {
-                hasBindings = true;
-                delete elementBindings[key];
+        // 添加删除按钮
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-delete';
+        deleteBtn.innerHTML = '删除';
+        deleteBtn.onclick = async (e) => {
+          e.stopPropagation(); // 阻止事件冒泡
+          if (confirm(`确定要删除生成器 "${name}" 吗？`)) {
+            try {
+              // 获取所有数据
+              const result = await chrome.storage.sync.get(['customGenerators', 'elementBindings', 'defaultGenerator']);
+              const generators = result.customGenerators || {};
+              const elementBindings = result.elementBindings || {};
+              
+              // 删除生成器
+              delete generators[name];
+              
+              // 如果删除的是默认生成器，清除默认生成器设置
+              let updates = { customGenerators: generators };
+              if (result.defaultGenerator === name) {
+                updates.defaultGenerator = null;
               }
-            });
-            if (hasBindings) {
-              updates.elementBindings = elementBindings;
+              
+              // 删除相关的绑定关系
+              let hasBindings = false;
+              Object.entries(elementBindings).forEach(([key, binding]) => {
+                if (binding.generatorName === name) {
+                  hasBindings = true;
+                  delete elementBindings[key];
+                }
+              });
+              if (hasBindings) {
+                updates.elementBindings = elementBindings;
+              }
+              
+              // 保存更新
+              await chrome.storage.sync.set(updates);
+              
+              // 刷新界面
+              loadGenerators();
+              loadBindings();  // 刷新绑定关系列表
+              
+              // 如果当前正在编辑这个生成器，清空编辑器
+              if (generatorName.value === name) {
+                generatorName.value = '';
+                generatorCode.value = '';
+                previewResult.textContent = '';
+              }
+              
+              showToast('删除成功！');
+            } catch (error) {
+              console.error('Delete generator error:', error);
+              showToast('删除失败: ' + error.message, 'error');
             }
-            
-            // 保存更新
-            await chrome.storage.sync.set(updates);
-            
-            // 刷新界面
-            loadGenerators();
-            loadBindings();  // 刷新绑定关系列表
-            
-            // 如果当前正在编辑这个生成器，清空编辑器
-            if (generatorName.value === name) {
-              generatorName.value = '';
-              generatorCode.value = '';
-              previewResult.textContent = '';
-            }
-            
-            showToast('删除成功！');
-          } catch (error) {
-            console.error('Delete generator error:', error);
-            showToast('删除失败: ' + error.message, 'error');
           }
-        }
-      };
-      
-      item.appendChild(deleteBtn);
-      item.onclick = () => {
-        generatorName.value = name;
-        generatorCode.value = code;
-        previewResult.textContent = '';
-        // 高亮选中的生成器
-        document.querySelectorAll('.generator-item').forEach(el => el.classList.remove('active'));
-        item.classList.add('active');
-        // 自动在绑定关系中搜索该生成器
-        searchBinding.value = name;
-        // 触发搜索事件
-        const event = new Event('input');
-        searchBinding.dispatchEvent(event);
-      };
-      
-      generatorList.appendChild(item);
+        };
+        
+        item.appendChild(deleteBtn);
+        item.onclick = () => {
+          generatorName.value = name;
+          generatorCode.value = generators[name];
+          previewResult.textContent = '';
+          // 高亮选中的生成器
+          document.querySelectorAll('.generator-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+          // 自动在绑定关系中搜索该生成器
+          searchBinding.value = name;
+          // 触发搜索事件
+          const event = new Event('input');
+          searchBinding.dispatchEvent(event);
+        };
+        
+        generatorList.appendChild(item);
+      }
+    });
+
+    // 显示未在顺序中的新生成器
+    Object.keys(generators).forEach(name => {
+      if (!order.includes(name)) {
+        const item = document.createElement('div');
+        item.className = 'generator-item';
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = name;
+        item.appendChild(nameSpan);
+
+        // 添加删除按钮
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn btn-delete';
+        deleteBtn.innerHTML = '删除';
+        deleteBtn.onclick = async (e) => {
+          e.stopPropagation(); // 阻止事件冒泡
+          if (confirm(`确定要删除生成器 "${name}" 吗？`)) {
+            try {
+              // 获取所有数据
+              const result = await chrome.storage.sync.get(['customGenerators', 'elementBindings', 'defaultGenerator']);
+              const generators = result.customGenerators || {};
+              const elementBindings = result.elementBindings || {};
+              
+              // 删除生成器
+              delete generators[name];
+              
+              // 如果删除的是默认生成器，清除默认生成器设置
+              let updates = { customGenerators: generators };
+              if (result.defaultGenerator === name) {
+                updates.defaultGenerator = null;
+              }
+              
+              // 删除相关的绑定关系
+              let hasBindings = false;
+              Object.entries(elementBindings).forEach(([key, binding]) => {
+                if (binding.generatorName === name) {
+                  hasBindings = true;
+                  delete elementBindings[key];
+                }
+              });
+              if (hasBindings) {
+                updates.elementBindings = elementBindings;
+              }
+              
+              // 保存更新
+              await chrome.storage.sync.set(updates);
+              
+              // 刷新界面
+              loadGenerators();
+              loadBindings();  // 刷新绑定关系列表
+              
+              // 如果当前正在编辑这个生成器，清空编辑器
+              if (generatorName.value === name) {
+                generatorName.value = '';
+                generatorCode.value = '';
+                previewResult.textContent = '';
+              }
+              
+              showToast('删除成功！');
+            } catch (error) {
+              console.error('Delete generator error:', error);
+              showToast('删除失败: ' + error.message, 'error');
+            }
+          }
+        };
+        
+        item.appendChild(deleteBtn);
+        item.onclick = () => {
+          generatorName.value = name;
+          generatorCode.value = generators[name];
+          previewResult.textContent = '';
+          // 高亮选中的生成器
+          document.querySelectorAll('.generator-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+          // 自动在绑定关系中搜索该生成器
+          searchBinding.value = name;
+          // 触发搜索事件
+          const event = new Event('input');
+          searchBinding.dispatchEvent(event);
+        };
+        
+        generatorList.appendChild(item);
+      }
     });
   }
 

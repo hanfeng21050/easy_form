@@ -22,9 +22,10 @@ document.addEventListener('DOMContentLoaded', function() {
   async function loadGenerators() {
     console.log('Loading generators...');
     try {
-      const result = await chrome.storage.sync.get(['customGenerators', 'defaultGenerator']);
+      const result = await chrome.storage.sync.get(['customGenerators', 'defaultGenerator', 'generatorOrder']);
       const generators = result.customGenerators || {};
       const defaultGenerator = result.defaultGenerator;
+      const order = result.generatorOrder || Object.keys(generators);
       
       generatorList.innerHTML = '';
       
@@ -38,9 +39,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
       
-      Object.entries(generators).forEach(([name, code]) => {
-        const item = createGeneratorItem(name, code);
-        generatorList.appendChild(item);
+      // 按保存的顺序显示生成器
+      order.forEach(name => {
+        if (generators[name]) {
+          const item = createGeneratorItem(name, generators[name]);
+          generatorList.appendChild(item);
+        }
+      });
+      
+      // 显示未在顺序中的新生成器
+      Object.keys(generators).forEach(name => {
+        if (!order.includes(name)) {
+          const item = createGeneratorItem(name, generators[name]);
+          generatorList.appendChild(item);
+        }
       });
     } catch (error) {
       console.error('Load generators error:', error);
@@ -230,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function createGeneratorItem(name, code) {
     const item = document.createElement('div');
     item.className = 'generator-item';
+    item.draggable = true;
     
     const nameSpan = document.createElement('span');
     nameSpan.className = 'generator-name';
@@ -277,6 +290,68 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // 添加拖拽事件
+    item.addEventListener('dragstart', () => {
+      item.classList.add('dragging');
+    });
+
+    item.addEventListener('dragend', async () => {
+      item.classList.remove('dragging');
+      
+      // 保存新的顺序
+      const items = [...generatorList.querySelectorAll('.generator-item')];
+      const result = await chrome.storage.sync.get(['customGenerators', 'generatorOrder']);
+      const generators = {};
+      const order = [];
+      
+      items.forEach(item => {
+        const name = item.querySelector('.generator-name').textContent;
+        generators[name] = result.customGenerators[name];
+        order.push(name);
+      });
+      
+      await chrome.storage.sync.set({ 
+        customGenerators: generators,
+        generatorOrder: order
+      });
+    });
+    
     return item;
   }
+
+  // 添加拖拽排序功能
+  generatorList.addEventListener('dragover', e => {
+    e.preventDefault();
+    const draggingItem = document.querySelector('.dragging');
+    if (!draggingItem) return;
+    
+    // 移除所有项的drag-over类
+    document.querySelectorAll('.generator-item').forEach(item => {
+      item.classList.remove('drag-over');
+    });
+    
+    const siblings = [...generatorList.querySelectorAll('.generator-item:not(.dragging)')];
+    const nextSibling = siblings.find(sibling => {
+      const rect = sibling.getBoundingClientRect();
+      const offset = e.clientY - rect.top - rect.height / 2;
+      if (offset < 0) {
+        sibling.classList.add('drag-over');
+        return true;
+      }
+      return false;
+    });
+    
+    if (nextSibling) {
+      generatorList.insertBefore(draggingItem, nextSibling);
+    } else {
+      generatorList.appendChild(draggingItem);
+    }
+  });
+
+  // 拖拽结束时移除所有动画类
+  generatorList.addEventListener('dragend', () => {
+    document.querySelectorAll('.generator-item').forEach(item => {
+      item.classList.remove('drag-over');
+    });
+  });
 });

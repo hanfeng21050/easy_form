@@ -68,6 +68,11 @@
       align-items: center;
       padding: 8px 12px;
       border-bottom: 1px solid var(--border-color);
+      cursor: move;
+      user-select: none;
+      background: white;
+      transform: translateY(0);
+      transition: transform 0.2s ease;
     }
 
     .generator-item:last-child {
@@ -381,6 +386,23 @@
 
     .generator-list::-webkit-scrollbar-thumb:hover {
       background: #ccc;
+    }
+
+    .generator-item.dragging {
+      opacity: 0.5;
+      border: 2px dashed var(--primary-color);
+      transform: scale(1.02);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: relative;
+      z-index: 1;
+    }
+
+    .generator-item:not(.dragging) {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .generator-item.drag-over {
+      transform: translateY(8px);
     }
   </style>
 </head>
