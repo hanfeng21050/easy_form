@@ -4,8 +4,8 @@
   
   // 简化的日志函数
   const log = {
-    info: (...args) => console.log('[Generator]', ...args),
-    error: (...args) => console.error('[Generator]', ...args)
+    info: (...args) => console.log('[UF30表单填充助手Beta]', ...args),
+    error: (...args) => console.error('[UF30表单填充助手Beta]', ...args)
   };
 
   // 核心生成器函数
@@ -35,23 +35,44 @@
       const value = await generateValue(generatorName);
       
       if (value) {
-        element.value = value;
-        ['input', 'change'].forEach(eventType => 
-          element.dispatchEvent(new Event(eventType, { bubbles: true }))
-        );
-        log.info('Value set:', value);
+        // 如果element是label元素，找到对应的input
+        let inputElement = element;
+        if (element.tagName.toLowerCase() === 'label') {
+          const formItem = element.closest('.h-form-item');
+          if (formItem) {
+            inputElement = formItem.querySelector('input');
+          }
+        }
+        
+        if (inputElement) {
+          inputElement.value = value;
+          ['input', 'change'].forEach(eventType => 
+            inputElement.dispatchEvent(new Event(eventType, { bubbles: true }))
+          );
+          log.info('Value set:', value);
+        }
       }
     } catch (error) {
       log.error('Fill field failed:', error);
     }
   }
 
-  // Alt键状态监听
-  document.addEventListener('keydown', e => e.key === 'Alt' && (isAltPressed = true));
-  document.addEventListener('keyup', e => e.key === 'Alt' && (isAltPressed = false));
-
   // 生成元素的唯一标识
   function generateElementSelector(element) {
+    // 如果是input元素，尝试找到对应的label
+    if (element.tagName.toLowerCase() === 'input') {
+      // 向上查找到表单项容器
+      const formItem = element.closest('.h-form-item');
+      if (formItem) {
+        // 查找label中的文本内容
+        const labelText = formItem.querySelector('.uf3-inline-label-text span')?.textContent?.trim();
+        if (labelText) {
+          // 使用label文本作为主要标识符
+          return `label[title="${labelText}"]`;
+        }
+      }
+    }
+    
     const parts = [];
     
     // 从当前元素向上遍历，直到找到一个具有唯一标识的祖先元素

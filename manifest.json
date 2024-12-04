@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "自定义数据生成器",
+  "name": "UF30表单填充助手Beta",
   "version": "1.0",
-  "description": "支持自定义数据生成规则，快速填充表单数据",
+  "description": "专为UF30设计的智能表单填充工具，支持自定义数据生成规则，提高填表效率",
   "permissions": [
     "activeTab",
     "storage",
