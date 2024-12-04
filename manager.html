@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>生成器与绑定管理</title>
+  <style>
+    :root {
+      --primary-color: #1a73e8;
+      --border-color: #e0e0e0;
+      --background: #f5f5f5;
+      --text-color: #333;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--background);
+      color: var(--text-color);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 20px;
+    }
+
+    .sidebar {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .main-content {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .search-box {
+      margin-bottom: 16px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .generator-list {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    .generator-list::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .generator-list::-webkit-scrollbar-track {
+      background: #f5f5f5;
+    }
+
+    .generator-list::-webkit-scrollbar-thumb {
+      background: #ddd;
+      border-radius: 3px;
+    }
+
+    .generator-list::-webkit-scrollbar-thumb:hover {
+      background: #ccc;
+    }
+
+    .generator-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .generator-item:hover {
+      background: var(--background);
+    }
+
+    .generator-item.active {
+      background: rgba(26, 115, 232, 0.1);
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+
+    .binding-group {
+      margin-bottom: 20px;
+    }
+
+    .binding-group-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #666;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .binding-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+
+    .binding-item:hover {
+      background: var(--background);
+    }
+
+    .binding-info {
+      flex: 1;
+    }
+
+    .url {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .selector {
+      font-family: monospace;
+      font-size: 11px;
+      color: #1e8e3e;
+      margin-top: 4px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      padding: 4px 8px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+
+    .editor {
+      margin-top: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    textarea.form-control {
+      height: 200px;
+      font-family: monospace;
+      resize: vertical;
+    }
+
+    .preview {
+      margin-top: 16px;
+      min-height: 15px;
+      padding: 12px;
+      background: var(--background);
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
+      word-wrap: break-word;
+      color: #666;
+      display: flex;
+      align-items: center;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .tabs {
+      display: flex;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .tab {
+      padding: 8px 16px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab.active {
+      border-bottom-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    /* 删除按钮样式 */
+    .btn-delete {
+      padding: 4px 8px;
+      font-size: 12px;
+      color: #dc3545;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .generator-item:hover .btn-delete {
+      opacity: 1;
+    }
+
+    .btn-delete:hover {
+      background: rgba(220, 53, 69, 0.1);
+    }
+
+    /* Toast提示样式 */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 8px 16px;
+      background: rgba(76, 175, 80, 0.9);
+      color: white;
+      border-radius: 4px;
+      z-index: 1000;
+    }
+
+    .toast.error {
+      background: rgba(220, 53, 69, 0.9);
+    }
+
+    /* 添加绑定关系���理头部样式 */
+    .binding-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .binding-header h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .binding-header .search-box {
+      width: 200px;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 左侧边栏 -->
+    <div class="sidebar">
+      <div class="search-box">
+        <input type="text" class="search-input" id="searchGenerator" placeholder="搜索生成器...">
+      </div>
+      <div class="generator-list" id="generatorList"></div>
+      <div class="editor">
+        <div class="form-group">
+          <label for="generatorName">生成器名称</label>
+          <input type="text" class="form-control" id="generatorName">
+        </div>
+        <div class="form-group">
+          <label for="generatorCode">生成规则</label>
+          <textarea class="form-control" id="generatorCode"></textarea>
+        </div>
+        <div class="actions">
+          <button class="btn btn-primary" id="testGenerator">测试</button>
+          <button class="btn btn-primary" id="saveGenerator">保存</button>
+        </div>
+        <div class="preview" id="previewResult"></div>
+      </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+      <div class="search-box">
+        <input type="text" class="search-input" id="searchBinding" placeholder="搜索绑定关系...">
+      </div>
+      <div id="bindingList"></div>
+    </div>
+  </div>
+  <script src="lib/eval5.min.js"></script>
+  <script src="lib/eval5.js"></script>
+  <script src="lib/babel.min.js"></script>
+  <script src="interpreter.js"></script>
+  <script src="manager.js"></script>
+</body>
+</html> 
