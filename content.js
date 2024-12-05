@@ -75,7 +75,7 @@
     
     const parts = [];
     
-    // 从当前元素向上遍历，直到找到一个具有唯一标识的祖先元素
+    // 从当前元素向上遍历，直到找到个具有唯一标识的祖先元素
     function generatePath(el, isTarget = true) {
       if (!el || el === document.body) return;
       
@@ -285,6 +285,11 @@
     // 点击事件
     button.onclick = async (e) => {
       e.stopPropagation();
+      
+      // 先让输入框获得焦点
+      element.focus();
+      
+      // 然后生成并填充数据
       await fillField(element, `custom:${binding.generatorName}`);
     };
     
