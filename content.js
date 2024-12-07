@@ -29,7 +29,7 @@
   // 填充字段值
   async function fillField(element, dataType) {
     try {
-      if (!dataType.startsWith('custom:')) return;
+      if (!dataType?.startsWith('custom:')) return;
       
       const generatorName = dataType.split(':')[1];
       const value = await generateValue(generatorName);
@@ -59,73 +59,101 @@
 
   // 生成元素的唯一标识
   function generateElementSelector(element) {
-    // 如果是input元素，尝试找到对应的label
-    if (element.tagName.toLowerCase() === 'input') {
-      // 向上查找到表单项容器
-      const formItem = element.closest('.h-form-item');
-      if (formItem) {
-        // 查找label中的文本内容
-        const labelText = formItem.querySelector('.uf3-inline-label-text span')?.textContent?.trim();
-        if (labelText) {
-          // 使用label文本作为主要标识符
-          return `label[title="${labelText}"]`;
+    // 只处理input和textarea元素
+    const tagName = element.tagName.toLowerCase();
+    if (tagName !== 'input' && tagName !== 'textarea') {
+      console.log('Element is not input or textarea:', element);
+      return null;
+    }
+
+    // 查找最近的表单项容器
+    const formItem = element.closest('.uf3-form-item');
+    if (!formItem) {
+      console.log('No form item container found for element:', element);
+      return null;
+    }
+
+    // 获取label文本
+    const labelElement = formItem.querySelector('.h-form-item-label');
+    const labelText = labelElement?.querySelector('.uf3-inline-label-text span')?.textContent?.trim();
+    if (!labelText) {
+      console.log('No label text found for element:', element);
+      return null;
+    }
+
+    // 获取内容区域
+    const contentElement = formItem.querySelector('.h-form-item-content');
+    if (!contentElement) {
+      console.log('No content element found for element:', element);
+      return null;
+    }
+
+    // 找到当前元素在content区域中的所有同类元素中的位置
+    const elements = Array.from(contentElement.querySelectorAll('input, textarea'));
+    const elementIndex = elements.indexOf(element);
+    
+    // 生成选择器：label文本 + 元素类型 + 索引
+    const selector = `label[title="${labelText}"][element-type="${tagName}"][element-index="${elementIndex}"]`;
+    
+    console.log('Generated selector:', {
+      labelText,
+      tagName,
+      elementIndex,
+      selector,
+      element
+    });
+
+    return selector;
+  }
+
+  // 根据选择器查找元素
+  function findElementBySelector(selector) {
+    try {
+      // 解析选择器
+      const titleMatch = selector.match(/title="([^"]+)"/);
+      const typeMatch = selector.match(/element-type="([^"]+)"/);
+      const indexMatch = selector.match(/element-index="(\d+)"/);
+      
+      if (!titleMatch || !typeMatch || !indexMatch) {
+        console.log('Invalid selector format:', selector);
+        return null;
+      }
+
+      const labelText = titleMatch[1];
+      const elementType = typeMatch[1];
+      const elementIndex = parseInt(indexMatch[1]);
+
+      // 查找对应的表单项
+      const formItems = Array.from(document.querySelectorAll('.uf3-form-item'));
+      for (const formItem of formItems) {
+        const labelSpan = formItem.querySelector('.uf3-inline-label-text span');
+        if (labelSpan?.textContent?.trim() === labelText) {
+          // 找到匹配的label后，查找对应位置的元素
+          const contentElement = formItem.querySelector('.h-form-item-content');
+          const elements = Array.from(contentElement.querySelectorAll('input, textarea'));
+          const element = elements[elementIndex];
+          
+          if (element?.tagName.toLowerCase() === elementType) {
+            return element;
+          }
         }
       }
+      
+      console.log('No element found for selector:', selector);
+      return null;
+    } catch (error) {
+      console.error('Error finding element:', error);
+      return null;
     }
-    
-    const parts = [];
-    
-    // 从当前元素向上遍历，直到找到个具有唯一标识的祖先元素
-    function generatePath(el, isTarget = true) {
-      if (!el || el === document.body) return;
-      
-      let identifier = el.tagName.toLowerCase();
-      
-      // 对目标元素使用所有可用的属性
-      if (isTarget) {
-        if (el.id) identifier += `#${el.id}`;
-        if (el.name) identifier += `[name="${el.name}"]`;
-        if (el.getAttribute('placeholder')) identifier += `[placeholder="${el.getAttribute('placeholder')}"]`;
-        if (el.getAttribute('type')) identifier += `[type="${el.getAttribute('type')}"]`;
-        if (el.getAttribute('data-id')) identifier += `[data-id="${el.getAttribute('data-id')}"]`;
-        
-        // 使用 class，但过滤掉动态类
-        const classes = Array.from(el.classList)
-          .filter(cls => !cls.includes('has-generator-btn'))
-          .join('.');
-        if (classes) identifier += `.${classes}`;
-      } else {
-        // 对父元素只使用稳定的标识符
-        if (el.id) identifier += `#${el.id}`;
-        if (el.getAttribute('data-id')) identifier += `[data-id="${el.getAttribute('data-id')}"]`;
-      }
-      
-      // 如果当前层级没有唯一标识，添加 nth-child
-      if (identifier === el.tagName.toLowerCase() || (!isTarget && !el.id)) {
-        const parent = el.parentElement;
-        if (parent) {
-          const index = Array.from(parent.children)
-            .filter(child => child.tagName === el.tagName)
-            .indexOf(el) + 1;
-          identifier += `:nth-of-type(${index})`;
-        }
-      }
-      
-      parts.unshift(identifier);
-      
-      // 如果还没有找到唯一标识，继续向上查找
-      if (!el.id && !el.getAttribute('data-id')) {
-        generatePath(el.parentElement, false);
-      }
-    }
-    
-    generatePath(element);
-    return parts.join(' > ');
   }
 
   // 获取元素的绑定生成器
   async function getElementBinding(element) {
     const selector = generateElementSelector(element);
+    if (!selector) {
+      console.log('No valid selector generated for element:', element);
+      return null;
+    }
     
     console.log('Checking binding for:', {
       selector,
@@ -143,6 +171,10 @@
   // 保存元素绑定
   async function saveElementBinding(element, generatorName) {
     const selector = generateElementSelector(element);
+    if (!selector) {
+      console.error('Cannot generate selector for element:', element);
+      return;
+    }
     
     const { elementBindings = {} } = await chrome.storage.sync.get('elementBindings');
     
@@ -153,6 +185,7 @@
     };
     
     await chrome.storage.sync.set({ elementBindings });
+    log.info('Binding saved:', { selector, generatorName });
   }
 
   // 修改双击事件处理
@@ -293,8 +326,9 @@
       await fillField(element, `custom:${binding.generatorName}`);
     };
     
-    // 将按钮添加到输入框内部
+    // 将按钮添加到输入框的父元素中
     element.parentNode.insertBefore(button, element.nextSibling);
+    
     return button;
   }
 
