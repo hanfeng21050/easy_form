@@ -2,10 +2,10 @@
 (async function() {
   let isAltPressed = false;
   
-  // 简化的日志函数
+  // 空日志函数
   const log = {
-    info: (...args) => console.log('[UF30表单填充助手Beta]', ...args),
-    error: (...args) => console.error('[UF30表单填充助手Beta]', ...args)
+    info: () => {},
+    error: () => {}
   };
 
   // 核心生成器函数
@@ -89,7 +89,7 @@
     // 生成选择器：元素类型 + 属性 + 位置索引
     const selector = `position:${tagName}${attrSelectors}[position-index="${elementIndex}"]`;
     
-    console.log('Generated position selector:', {
+    log.info('Generated position selector:', {
       tagName,
       attributes,
       elementIndex,
@@ -121,7 +121,7 @@
       const elements = Array.from(document.querySelectorAll(baseSelector));
       return elements[elementIndex] || null;
     } catch (error) {
-      console.error('Error finding element by position:', error);
+      log.error('Error finding element by position:', error);
       return null;
     }
   }
@@ -143,14 +143,14 @@
     // 只处理input和textarea元素
     const tagName = element.tagName.toLowerCase();
     if (tagName !== 'input' && tagName !== 'textarea') {
-      console.log('Element is not input or textarea:', element);
+      log.info('Element is not input or textarea:', element);
       return null;
     }
 
     // 查找最近的表单项容器
     const formItem = element.closest('.uf3-form-item');
     if (!formItem) {
-      console.log('No form item container found, will use position selector');
+      log.info('No form item container found, will use position selector');
       return null;
     }
 
@@ -158,14 +158,14 @@
     const labelElement = formItem.querySelector('.h-form-item-label');
     const labelText = labelElement?.querySelector('.uf3-inline-label-text span')?.textContent?.trim();
     if (!labelText) {
-      console.log('No label text found, will use position selector');
+      log.info('No label text found, will use position selector');
       return null;
     }
 
     // 获取内容区域
     const contentElement = formItem.querySelector('.h-form-item-content');
     if (!contentElement) {
-      console.log('No content element found, will use position selector');
+      log.info('No content element found, will use position selector');
       return null;
     }
 
@@ -176,7 +176,7 @@
     // 生成选择器：label文本 + 元素类型 + 索引
     const selector = `form-item:${labelText}[element-type="${tagName}"][element-index="${elementIndex}"]`;
     
-    console.log('Generated form item selector:', {
+    log.info('Generated form item selector:', {
       labelText,
       tagName,
       elementIndex,
@@ -211,7 +211,7 @@
       const indexMatch = selector.match(/element-index="(\d+)"/);
       
       if (!typeMatch || !indexMatch) {
-        console.log('Invalid form item selector format:', selector);
+        log.info('Invalid form item selector format:', selector);
         return null;
       }
 
@@ -234,10 +234,10 @@
         }
       }
       
-      console.log('No element found for form item selector:', selector);
+      log.info('No element found for form item selector:', selector);
       return null;
     } catch (error) {
-      console.error('Error finding element:', error);
+      log.error('Error finding element:', error);
       return null;
     }
   }
@@ -246,11 +246,11 @@
   async function getElementBinding(element) {
     const selector = generateElementSelector(element);
     if (!selector) {
-      console.log('No valid selector generated for element:', element);
+      log.info('No valid selector generated for element:', element);
       return null;
     }
     
-    console.log('Checking binding for:', {
+    log.info('Checking binding for:', {
       selector,
       element
     });
@@ -258,7 +258,7 @@
     const { elementBindings = {} } = await chrome.storage.sync.get('elementBindings');
     const binding = elementBindings[selector];
     
-    console.log('Found binding:', binding);
+    log.info('Found binding:', binding);
     
     return binding;
   }
@@ -267,7 +267,7 @@
   async function saveElementBinding(element, generatorName) {
     const selector = generateElementSelector(element);
     if (!selector) {
-      console.error('Cannot generate selector for element:', element);
+      log.error('Cannot generate selector for element:', element);
       return;
     }
     
@@ -359,7 +359,7 @@
             // 填充数据
             await fillField(element, `custom:${request.generatorName}`);
           } catch (error) {
-            console.error('Fill with generator error:', error);
+            log.error('Fill with generator error:', error);
           }
         }
       }
@@ -464,7 +464,7 @@
         floatButtons.set(element, button);
       }
     } catch (error) {
-      console.error('Check and show float button error:', error);
+      log.error('Check and show float button error:', error);
     }
   }
 

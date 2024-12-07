@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-  console.log('DOM Content Loaded');
-  
   const generatorList = document.getElementById('generatorList');
   const previewResult = document.getElementById('previewResult');
   const exportBtn = document.getElementById('exportBtn');
@@ -10,17 +8,15 @@ document.addEventListener('DOMContentLoaded', function() {
   const searchInput = document.getElementById('searchInput');
 
   if (!generatorList || !previewResult || !exportBtn || !importBtn || !importFile || !openManager || !searchInput) {
-    console.error('Required elements not found');
+    showToast('初始化失败: 必需的DOM元素未找到', 'error');
     return;
   }
-
 
   // 加载保存的生成器
   loadGenerators();
 
   // 加载保存的生成器列表
   async function loadGenerators() {
-    console.log('Loading generators...');
     try {
       const result = await chrome.storage.sync.get(['customGenerators', 'defaultGenerator', 'generatorOrder']);
       const generators = result.customGenerators || {};
@@ -55,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     } catch (error) {
-      console.error('Load generators error:', error);
       showToast('加载生成器列表失败: ' + error.message, 'error');
     }
   }
@@ -95,7 +90,6 @@ document.addEventListener('DOMContentLoaded', function() {
       
       showToast('导出成功！');
     } catch (error) {
-      console.error('导出失败:', error);
       showToast('导出失败: ' + error.message, 'error');
     }
   });
@@ -132,7 +126,6 @@ document.addEventListener('DOMContentLoaded', function() {
       showToast('导入成功！');
       event.target.value = '';
     } catch (error) {
-      console.error('导入失败:', error);
       showToast('导入失败: ' + error.message, 'error');
     }
   });
@@ -195,7 +188,6 @@ document.addEventListener('DOMContentLoaded', function() {
         previewResult.style.backgroundColor = originalColor;
       }, 200);
     } catch (error) {
-      console.error('复制失败:', error);
       showToast('复制失败', 'error');
     }
   });

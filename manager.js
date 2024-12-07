@@ -37,7 +37,6 @@ document.addEventListener('DOMContentLoaded', async function() {
       previewResult.textContent = result;
       showToast('测试成功！');
     } catch (error) {
-      console.error('Test error:', error);
       previewResult.textContent = `错误: ${error.message}`;
       showToast('测试失败: ' + error.message, 'error');
     }
@@ -67,7 +66,6 @@ document.addEventListener('DOMContentLoaded', async function() {
       loadGenerators();
       showToast('保存成功！');
     } catch (error) {
-      console.error('Save error:', error);
       showToast('保存失败: ' + error.message, 'error');
     }
   });
@@ -114,16 +112,13 @@ document.addEventListener('DOMContentLoaded', async function() {
               const result = await chrome.storage.sync.get(['customGenerators', 'elementBindings', 'defaultGenerator']);
               const generators = result.customGenerators || {};
               const elementBindings = result.elementBindings || {};
-              
               // 删除生成器
               delete generators[name];
-              
               // 如果删除的是默认生成器，清除默认生成器设置
               let updates = { customGenerators: generators };
               if (result.defaultGenerator === name) {
                 updates.defaultGenerator = null;
               }
-              
               // 删除相关的绑定关系
               let hasBindings = false;
               Object.entries(elementBindings).forEach(([key, binding]) => {
@@ -135,24 +130,19 @@ document.addEventListener('DOMContentLoaded', async function() {
               if (hasBindings) {
                 updates.elementBindings = elementBindings;
               }
-              
               // 保存更新
               await chrome.storage.sync.set(updates);
-              
               // 刷新界面
               loadGenerators();
               loadBindings();  // 刷新绑定关系列表
-              
               // 如果当前正在编辑这个生成器，清空编辑器
               if (generatorName.value === name) {
                 generatorName.value = '';
                 generatorCode.value = '';
                 previewResult.textContent = '';
               }
-              
               showToast('删除成功！');
             } catch (error) {
-              console.error('Delete generator error:', error);
               showToast('删除失败: ' + error.message, 'error');
             }
           }
@@ -199,16 +189,13 @@ document.addEventListener('DOMContentLoaded', async function() {
               const result = await chrome.storage.sync.get(['customGenerators', 'elementBindings', 'defaultGenerator']);
               const generators = result.customGenerators || {};
               const elementBindings = result.elementBindings || {};
-              
               // 删除生成器
               delete generators[name];
-              
               // 如果删除的是默认生成器，清除默认生成器设置
               let updates = { customGenerators: generators };
               if (result.defaultGenerator === name) {
                 updates.defaultGenerator = null;
               }
-              
               // 删除相关的绑定关系
               let hasBindings = false;
               Object.entries(elementBindings).forEach(([key, binding]) => {
@@ -220,24 +207,19 @@ document.addEventListener('DOMContentLoaded', async function() {
               if (hasBindings) {
                 updates.elementBindings = elementBindings;
               }
-              
               // 保存更新
               await chrome.storage.sync.set(updates);
-              
               // 刷新界面
               loadGenerators();
               loadBindings();  // 刷新绑定关系列表
-              
               // 如果当前正在编辑这个生成器，清空编辑器
               if (generatorName.value === name) {
                 generatorName.value = '';
                 generatorCode.value = '';
                 previewResult.textContent = '';
               }
-              
               showToast('删除成功！');
             } catch (error) {
-              console.error('Delete generator error:', error);
               showToast('删除失败: ' + error.message, 'error');
             }
           }
@@ -318,7 +300,6 @@ document.addEventListener('DOMContentLoaded', async function() {
           loadBindings();
           showToast('删除成功！');
         } catch (error) {
-          console.error('Delete binding error:', error);
           showToast('删除失败: ' + error.message, 'error');
         }
       }
