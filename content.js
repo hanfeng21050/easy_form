@@ -57,8 +57,89 @@
     }
   }
 
+  // 生成基于位置的选择器
+  function generatePositionSelector(element) {
+    const tagName = element.tagName.toLowerCase();
+    if (tagName !== 'input' && tagName !== 'textarea') {
+      return null;
+    }
+
+    // 获取元素的特征属性
+    const attributes = {
+      type: element.type,
+      name: element.name,
+      placeholder: element.placeholder,
+      class: Array.from(element.classList).join(' ')
+    };
+
+    // 构建属性选择器部分
+    const attrSelectors = Object.entries(attributes)
+      .filter(([_, value]) => value) // 只使用有值的属性
+      .map(([key, value]) => `[${key}="${value}"]`)
+      .join('');
+
+    // 获取元素在同类元素中的索引
+    const sameTypeElements = Array.from(document.querySelectorAll(tagName + attrSelectors));
+    const elementIndex = sameTypeElements.indexOf(element);
+
+    if (elementIndex === -1) {
+      return null;
+    }
+
+    // 生成选择器：元素类型 + 属性 + 位置索引
+    const selector = `position:${tagName}${attrSelectors}[position-index="${elementIndex}"]`;
+    
+    console.log('Generated position selector:', {
+      tagName,
+      attributes,
+      elementIndex,
+      selector,
+      element
+    });
+
+    return selector;
+  }
+
+  // 根据位置选择器查找元素
+  function findElementByPositionSelector(selector) {
+    try {
+      if (!selector.startsWith('position:')) {
+        return null;
+      }
+
+      // 解析选择器
+      const selectorWithoutPrefix = selector.substring(9); // 移除 'position:' 前缀
+      const indexMatch = selectorWithoutPrefix.match(/\[position-index="(\d+)"\]$/);
+      if (!indexMatch) {
+        return null;
+      }
+
+      const elementIndex = parseInt(indexMatch[1]);
+      const baseSelector = selectorWithoutPrefix.replace(/\[position-index="\d+"\]$/, '');
+      
+      // 查找所有匹配的元素
+      const elements = Array.from(document.querySelectorAll(baseSelector));
+      return elements[elementIndex] || null;
+    } catch (error) {
+      console.error('Error finding element by position:', error);
+      return null;
+    }
+  }
+
   // 生成元素的唯一标识
   function generateElementSelector(element) {
+    // 首先尝试使用表单项方式生成选择器
+    const formSelector = generateFormItemSelector(element);
+    if (formSelector) {
+      return formSelector;
+    }
+
+    // 如果不是表单项，使用位置选择器
+    return generatePositionSelector(element);
+  }
+
+  // 生成基于表单项的选择器
+  function generateFormItemSelector(element) {
     // 只处理input和textarea元素
     const tagName = element.tagName.toLowerCase();
     if (tagName !== 'input' && tagName !== 'textarea') {
@@ -69,7 +150,7 @@
     // 查找最近的表单项容器
     const formItem = element.closest('.uf3-form-item');
     if (!formItem) {
-      console.log('No form item container found for element:', element);
+      console.log('No form item container found, will use position selector');
       return null;
     }
 
@@ -77,14 +158,14 @@
     const labelElement = formItem.querySelector('.h-form-item-label');
     const labelText = labelElement?.querySelector('.uf3-inline-label-text span')?.textContent?.trim();
     if (!labelText) {
-      console.log('No label text found for element:', element);
+      console.log('No label text found, will use position selector');
       return null;
     }
 
     // 获取内容区域
     const contentElement = formItem.querySelector('.h-form-item-content');
     if (!contentElement) {
-      console.log('No content element found for element:', element);
+      console.log('No content element found, will use position selector');
       return null;
     }
 
@@ -93,9 +174,9 @@
     const elementIndex = elements.indexOf(element);
     
     // 生成选择器：label文本 + 元素类型 + 索引
-    const selector = `label[title="${labelText}"][element-type="${tagName}"][element-index="${elementIndex}"]`;
+    const selector = `form-item:${labelText}[element-type="${tagName}"][element-index="${elementIndex}"]`;
     
-    console.log('Generated selector:', {
+    console.log('Generated form item selector:', {
       labelText,
       tagName,
       elementIndex,
@@ -108,18 +189,32 @@
 
   // 根据选择器查找元素
   function findElementBySelector(selector) {
+    // 根据选择器类型调用不同的查找方法
+    if (selector.startsWith('form-item:')) {
+      return findElementByFormItemSelector(selector);
+    } else if (selector.startsWith('position:')) {
+      return findElementByPositionSelector(selector);
+    }
+    return null;
+  }
+
+  // 根据表单项选择器查找元素
+  function findElementByFormItemSelector(selector) {
     try {
-      // 解析选择器
-      const titleMatch = selector.match(/title="([^"]+)"/);
-      const typeMatch = selector.match(/element-type="([^"]+)"/);
-      const indexMatch = selector.match(/element-index="(\d+)"/);
-      
-      if (!titleMatch || !typeMatch || !indexMatch) {
-        console.log('Invalid selector format:', selector);
+      if (!selector.startsWith('form-item:')) {
         return null;
       }
 
-      const labelText = titleMatch[1];
+      // 解析选择器
+      const labelText = selector.substring(10, selector.indexOf('[element-type="'));
+      const typeMatch = selector.match(/element-type="([^"]+)"/);
+      const indexMatch = selector.match(/element-index="(\d+)"/);
+      
+      if (!typeMatch || !indexMatch) {
+        console.log('Invalid form item selector format:', selector);
+        return null;
+      }
+
       const elementType = typeMatch[1];
       const elementIndex = parseInt(indexMatch[1]);
 
@@ -139,7 +234,7 @@
         }
       }
       
-      console.log('No element found for selector:', selector);
+      console.log('No element found for form item selector:', selector);
       return null;
     } catch (error) {
       console.error('Error finding element:', error);
@@ -186,6 +281,23 @@
     
     await chrome.storage.sync.set({ elementBindings });
     log.info('Binding saved:', { selector, generatorName });
+
+    // 更新或创建浮动按钮
+    const existingButton = floatButtons.get(element);
+    if (existingButton) {
+      // 如果按钮已存在，更新按钮的标题和点击事件
+      existingButton.title = `使用生成器: ${generatorName}`;
+      existingButton.onclick = async (e) => {
+        e.stopPropagation();
+        element.focus();
+        await fillField(element, `custom:${generatorName}`);
+      };
+    } else {
+      // 如果按钮不存在，创建新按钮
+      const binding = { generatorName };
+      const button = createFloatButton(element, binding);
+      floatButtons.set(element, button);
+    }
   }
 
   // 修改双击事件处理
