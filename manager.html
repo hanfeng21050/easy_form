@@ -42,6 +42,33 @@
       overflow: hidden;
     }
 
+    .generator-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .generator-list {
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      margin-top: 16px;
+    }
+
+    .editor {
+      background: white;
+      border-radius: 0 0 8px 8px;  /* 只保留底部圆角 */
+      padding: 16px;
+      margin-top: auto;
+      border-top: 1px solid var(--border-color);
+      margin-left: -16px;
+      margin-right: -16px;
+      margin-bottom: -16px;
+    }
+
     .main-content {
       background: white;
       border-radius: 8px;
@@ -54,24 +81,11 @@
       overflow: hidden;
     }
 
-    .generator-list {
+    .binding-section {
       flex: 1;
-      overflow-y: auto;
-      margin-bottom: 16px;
-    }
-
-    #bindingList {
-      flex: 1;
-      overflow-y: auto;
-      margin-top: 16px;
-    }
-
-    .editor {
-      flex: 2;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      overflow-y: auto;
+      overflow: hidden;
     }
 
     .search-box {
@@ -84,6 +98,12 @@
       border: 1px solid var(--border-color);
       border-radius: 4px;
       box-sizing: border-box;
+    }
+
+    #bindingList {
+      flex: 1;
+      overflow-y: auto;
+      margin-top: 16px;
     }
 
     .generator-item {
@@ -192,12 +212,13 @@
       border: 1px solid var(--border-color);
       border-radius: 4px;
       box-sizing: border-box;
+      background: var(--background);
     }
 
     textarea.form-control {
-      height: 200px;
+      height: 120px;
       font-family: monospace;
-      resize: vertical;
+      resize: none;
     }
 
     .preview {
@@ -212,8 +233,6 @@
       word-break: break-all;
       word-wrap: break-word;
       color: #666;
-      display: flex;
-      align-items: center;
     }
 
     .empty-state {
@@ -303,10 +322,13 @@
   <div class="container">
     <!-- 左侧边栏 -->
     <div class="sidebar">
-      <div class="search-box">
-        <input type="text" class="search-input" id="searchGenerator" placeholder="搜索生成器...">
+      <div class="generator-section">
+        <div class="search-box">
+          <input type="text" class="search-input" id="searchGenerator" placeholder="搜索生成器...">
+        </div>
+        <div class="generator-list" id="generatorList"></div>
       </div>
-      <div class="generator-list" id="generatorList"></div>
+      
       <div class="editor">
         <div class="form-group">
           <label for="generatorName">生成器名称</label>
@@ -326,10 +348,12 @@
 
     <!-- 主内容区 -->
     <div class="main-content">
-      <div class="search-box">
-        <input type="text" class="search-input" id="searchBinding" placeholder="搜索绑定关系...">
+      <div class="binding-section">
+        <div class="search-box">
+          <input type="text" class="search-input" id="searchBinding" placeholder="搜索绑定关系...">
+        </div>
+        <div id="bindingList"></div>
       </div>
-      <div id="bindingList"></div>
     </div>
   </div>
   <script src="lib/eval5.min.js"></script>
