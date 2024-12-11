@@ -9,6 +9,7 @@
       --border-color: #e0e0e0;
       --background: #f5f5f5;
       --text-color: #333;
+      --max-width: 1200px;
     }
 
     body {
@@ -17,17 +18,62 @@
       font-family: system-ui, -apple-system, sans-serif;
       background: var(--background);
       color: var(--text-color);
-      height: 100vh;
+      min-height: 100vh;
       box-sizing: border-box;
     }
 
-    .container {
-      max-width: 1200px;
+    .page-container {
+      max-width: var(--max-width);
       margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 40px);
+    }
+
+    /* 页签样式 */
+    .tabs {
+      display: flex;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      background: white;
+      padding: 0 20px;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .tab {
+      padding: 12px 24px;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+      margin-right: 8px;
+    }
+
+    .tab:hover {
+      color: var(--primary-color);
+    }
+
+    .tab.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* 容器样式 */
+    .container {
       display: grid;
       grid-template-columns: 300px 1fr;
       gap: 20px;
-      height: calc(100vh - 40px);  /* 减去body的padding */
+      height: 100%;
     }
 
     .sidebar {
@@ -241,21 +287,18 @@
       color: #666;
     }
 
-    .tabs {
-      display: flex;
-      margin-bottom: 16px;
-      border-bottom: 1px solid var(--border-color);
+    /* iframe样式 */
+    #settingsContent {
+      background: white;
+      border-radius: 8px;
+      height: 100%;
+      overflow: hidden;
     }
 
-    .tab {
-      padding: 8px 16px;
-      cursor: pointer;
-      border-bottom: 2px solid transparent;
-    }
-
-    .tab.active {
-      border-bottom-color: var(--primary-color);
-      color: var(--primary-color);
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
     }
 
     /* 删除按钮样式 */
@@ -319,43 +362,57 @@
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- 左侧边栏 -->
-    <div class="sidebar">
-      <div class="generator-section">
-        <div class="search-box">
-          <input type="text" class="search-input" id="searchGenerator" placeholder="搜索生成器...">
+  <div class="page-container">
+    <div class="tabs">
+      <div class="tab active" data-tab="manager">生成器和绑定管理</div>
+      <div class="tab" data-tab="settings">设置</div>
+    </div>
+
+    <div class="tab-content active" id="managerContent">
+      <div class="container">
+        <!-- 左侧边栏 -->
+        <div class="sidebar">
+          <div class="generator-section">
+            <div class="search-box">
+              <input type="text" class="search-input" id="searchGenerator" placeholder="搜索生成器...">
+            </div>
+            <div class="generator-list" id="generatorList"></div>
+          </div>
+          
+          <div class="editor">
+            <div class="form-group">
+              <label for="generatorName">生成器名称</label>
+              <input type="text" class="form-control" id="generatorName">
+            </div>
+            <div class="form-group">
+              <label for="generatorCode">生成规则</label>
+              <textarea class="form-control" id="generatorCode"></textarea>
+            </div>
+            <div class="actions">
+              <button class="btn btn-primary" id="testGenerator">测试</button>
+              <button class="btn btn-primary" id="saveGenerator">保存</button>
+            </div>
+            <div class="preview" id="previewResult"></div>
+          </div>
         </div>
-        <div class="generator-list" id="generatorList"></div>
-      </div>
-      
-      <div class="editor">
-        <div class="form-group">
-          <label for="generatorName">生成器名称</label>
-          <input type="text" class="form-control" id="generatorName">
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+          <div class="binding-section">
+            <div class="search-box">
+              <input type="text" class="search-input" id="searchBinding" placeholder="搜索绑定关系...">
+            </div>
+            <div id="bindingList"></div>
+          </div>
         </div>
-        <div class="form-group">
-          <label for="generatorCode">生成规则</label>
-          <textarea class="form-control" id="generatorCode"></textarea>
-        </div>
-        <div class="actions">
-          <button class="btn btn-primary" id="testGenerator">测试</button>
-          <button class="btn btn-primary" id="saveGenerator">保存</button>
-        </div>
-        <div class="preview" id="previewResult"></div>
       </div>
     </div>
 
-    <!-- 主内容区 -->
-    <div class="main-content">
-      <div class="binding-section">
-        <div class="search-box">
-          <input type="text" class="search-input" id="searchBinding" placeholder="搜索绑定关系...">
-        </div>
-        <div id="bindingList"></div>
-      </div>
+    <div class="tab-content" id="settingsContent">
+      <iframe src="settings.html"></iframe>
     </div>
   </div>
+
   <script src="lib/eval5.min.js"></script>
   <script src="lib/eval5.js"></script>
   <script src="lib/babel.min.js"></script>

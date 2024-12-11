@@ -1,6 +1,7 @@
 // 使用立即执行函数避免全局变量污染
 (async function() {
   let isAltPressed = false;
+  let showFloatButton = true; // 默认显示浮动按钮
   
   // 空日志函数
   const log = {
@@ -450,6 +451,12 @@
   // 检查并显示浮动按钮
   async function checkAndShowFloatButton(element) {
     try {
+      // 如果设置为不显示按钮，直接返回
+      if (!showFloatButton) {
+        removeFloatButton(element);
+        return;
+      }
+
       const binding = await getElementBinding(element);
       
       // 如果没有绑定关系，移除可能存在的按钮
@@ -457,14 +464,41 @@
         removeFloatButton(element);
         return;
       }
-      
+
       // 只有存在绑定关系且没有创建过按钮时才创建
       if (!floatButtons.has(element)) {
         const button = createFloatButton(element, binding);
         floatButtons.set(element, button);
       }
     } catch (error) {
-      log.error('Check and show float button error:', error);
+      log.error('Check and show float button failed:', error);
+    }
+  }
+
+  // 监听设置变化
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'settingsChanged') {
+      showFloatButton = request.settings.showFloatButton;
+      
+      // 如果设置为不显示按钮，移除所有现有按钮
+      if (!showFloatButton) {
+        floatButtons.forEach((button, element) => {
+          removeFloatButton(element);
+        });
+      } else {
+        // 如果设置为显示按钮，重新检查所有输入框
+        checkAllInputs();
+      }
+    }
+  });
+
+  // 初始化时加载设置
+  async function loadSettings() {
+    try {
+      const { settings = {} } = await chrome.storage.sync.get('settings');
+      showFloatButton = settings.showFloatButton !== false;
+    } catch (error) {
+      log.error('Load settings failed:', error);
     }
   }
 
@@ -544,13 +578,13 @@
     }, 200);
   });
 
-  // 页面加载完成后检查所有输入元素
-  document.addEventListener('DOMContentLoaded', checkAllInputs);
-
-  // 为了确保在 DOMContentLoaded 之前加载的页面也能正常工作
+  // 页面加载完成后先加载设置，然后检查所有输入元素
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', checkAllInputs);
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadSettings();
+      checkAllInputs();
+    });
   } else {
-    checkAllInputs();
+    loadSettings().then(() => checkAllInputs());
   }
 })();

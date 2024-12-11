@@ -322,7 +322,36 @@ document.addEventListener('DOMContentLoaded', async function() {
     }, 2000);
   }
 
-  // 初始化加载
+  // 页签切换功能
+  function initTabs() {
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const tabId = tab.getAttribute('data-tab');
+        
+        // 移除所有活动状态
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+
+        // 添加当前项的活动状态
+        tab.classList.add('active');
+        document.getElementById(`${tabId}Content`).classList.add('active');
+
+        // 如果是设置页面，确保iframe已加载
+        if (tabId === 'settings') {
+          const iframe = document.querySelector('#settingsContent iframe');
+          if (iframe && !iframe.src) {
+            iframe.src = 'settings.html';
+          }
+        }
+      });
+    });
+  }
+
+  // 初始化页面
+  initTabs();
   loadGenerators();
   loadBindings();
 }); 
