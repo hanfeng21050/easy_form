@@ -337,6 +337,7 @@
       fillForms: () => {
         document.querySelectorAll('input:not([type="hidden"]), textarea, select')
           .forEach(input => fillField(input, request.dataType));
+        sendResponse({ success: true });
       },
       clearForms: () => {
         document.querySelectorAll('input:not([type="hidden"]), textarea, select')
@@ -346,6 +347,7 @@
               input.dispatchEvent(new Event(eventType, { bubbles: true }))
             );
           });
+        sendResponse({ success: true });
       },
       fillWithGenerator: async () => {
         const element = document.activeElement;
@@ -359,15 +361,29 @@
             
             // 填充数据
             await fillField(element, `custom:${request.generatorName}`);
+            sendResponse({ success: true });
           } catch (error) {
-            log.error('Fill with generator error:', error);
+            console.error('Fill with generator error:', error);
+            sendResponse({ success: false, error: error.message });
           }
+        } else {
+          sendResponse({ success: false, error: 'No active element' });
         }
       }
     };
 
-    handlers[request.action]?.();
-    return true; // 表示异步处理
+    const handler = handlers[request.action];
+    if (handler) {
+      if (request.action === 'fillWithGenerator') {
+        handler();
+        return true; // 只对异步处理返回 true
+      } else {
+        handler();
+        return false; // 同步处理直接返回 false
+      }
+    }
+    sendResponse({ success: false, error: 'Unknown action' });
+    return false;
   });
 
   // 修改浮动按钮样式
